@@ -1181,6 +1181,8 @@ MonoBehaviour:
   maxSpeed: 8
   acceleration: 70
   deceleration: 90
+  animator: {fileID: 458289995}
+  spriteRenderer: {fileID: 458289992}
   groundCheck: {fileID: 142653506}
   groundCheckRadius: 0.614
   groundLayer:
@@ -1378,6 +1380,8 @@ MonoBehaviour:
   maxSpeed: 8
   acceleration: 70
   deceleration: 90
+  animator: {fileID: 0}
+  spriteRenderer: {fileID: 0}
   groundCheck: {fileID: 0}
   groundCheckRadius: 0.15
   groundLayer:
@@ -1523,7 +1527,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 32.5625
+  orthographic size: 30.625
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2

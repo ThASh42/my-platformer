@@ -16,6 +16,8 @@ public class PlayerController : MonoBehaviour
     {
         body = GetComponent<Rigidbody2D>();
         controls = new PlayerControls();
+        
+        if (cameraShake == null) cameraShake = FindAnyObjectByType<CameraShake>();  // А
     }
  
     // Без Enable введення не приходить — і помилки при цьому не буде
@@ -46,6 +48,8 @@ public class PlayerController : MonoBehaviour
  
         moveInput = controls.Player.Move.ReadValue<Vector2>().x;
         UpdateVisuals();
+        CheckLanding();
+        UpdateFootsteps();
     }
     [Header("Вигляд")]
     [SerializeField] private Animator animator;
@@ -133,5 +137,72 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField, Range(1f, 6f)] private float fallMultiplier = 2.2f;
     [SerializeField, Range(1f, 8f)] private float lowJumpMultiplier = 3.5f;
+    
+    [Header("Зворотний звʼязок")]
+    [SerializeField, Range(1f, 20f)] private float hardLandingSpeed = 9f;
  
+    private bool wasGrounded;
+    private float fallSpeed;     // найбільша швидкість падіння перед дотиком
+ 
+    // Викликати наприкінці Update(), після isGrounded = CheckGround();
+    private void CheckLanding()
+    {
+        // Поки летимо вниз — памʼятаємо, наскільки швидко
+        if (!isGrounded)
+            fallSpeed = Mathf.Max(fallSpeed, -body.linearVelocity.y);
+ 
+        if (isGrounded && !wasGrounded)   // ← саме ПЕРЕХІД, а не стан
+            OnLanded(fallSpeed);
+ 
+        if (isGrounded) fallSpeed = 0f;
+        wasGrounded = isGrounded;
+    }
+    
+    
+    [SerializeField] private CameraShake cameraShake;
+    private void OnLanded(float speed)
+    {
+        // ТІЛЬКИ жорстке приземлення. Легкий зскок зі сходинки ефекту не дає
+        if (speed < hardLandingSpeed) return;
+ 
+        // ↓ сюди додасться ОДИН рядок із обраного варіанта — А або Б
+        cameraShake.Shake(0.12f, 0.12f);   // ← весь варіант А
+    }
+
+    [Header("Звук")]
+    [SerializeField] private AudioSource source;
+    [SerializeField] private AudioClip[] footsteps;   // щонайменше ТРИ кліпи
+    [SerializeField, Range(0f, 0.3f)] private float pitchVariance = 0.12f;
+ 
+    private void PlayFootstep()
+    {
+        if (footsteps.Length == 0) return;
+ 
+        // Два шари випадковості:
+        // 1) різні кліпи — прибирає впізнаваність конкретного звуку
+        AudioClip clip = footsteps[Random.Range(0, footsteps.Length)];
+ 
+        // 2) розкид висоти тону — прибирає механічність повторення
+        source.pitch = 1f + Random.Range(-pitchVariance, pitchVariance);
+        source.PlayOneShot(clip);
+    }
+    [SerializeField, Range(0.1f, 0.8f)] private float stepInterval = 0.32f;
+    private float stepTimer;
+ 
+    // Викликати в Update(), після isGrounded = CheckGround();
+    private void UpdateFootsteps()
+    {
+        bool running = isGrounded && Mathf.Abs(body.linearVelocity.x) > 0.5f;
+ 
+        // Не біжимо — скидаємо таймер, щоб перший крок після старту був одразу
+        if (!running) { stepTimer = 0f; return; }
+ 
+        stepTimer -= Time.deltaTime;
+        if (stepTimer <= 0f)
+        {
+            PlayFootstep();
+            stepTimer = stepInterval;
+        }
+    }
+
 }
